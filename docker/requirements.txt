@@ -1,19 +1,19 @@
 # Bandit
 # ----------------------------------------------------------------
-bandit==1.9.3  # https://github.com/PyCQA/bandit
+bandit==1.9.4  # https://github.com/PyCQA/bandit
 bandit-sarif-formatter==1.1.1  # https://github.com/microsoft/bandit-sarif-formatter
 
 # Semgrep
 # ----------------------------------------------------------------
-semgrep==1.152.0  # https://github.com/returntocorp/semgrep
+semgrep==1.161.0  # https://github.com/returntocorp/semgrep
 
 # CryptoLyzer
 # ----------------------------------------------------------------
-CryptoLyzer==1.0.2  # https://gitlab.com/coroner/cryptolyzer
+CryptoLyzer==1.1.0  # https://gitlab.com/coroner/cryptolyzer
 
 # Importer
 # ----------------------------------------------------------------
-requests==2.32.5  # https://github.com/psf/requests
+requests==2.33.1  # https://github.com/psf/requests
 
 # Vulnerability Scanner
 # ----------------------------------------------------------------
