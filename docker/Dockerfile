@@ -27,9 +27,9 @@ RUN wget --no-verbose https://github.com/Checkmarx/kics/archive/refs/tags/v${KIC
 FROM python:3.13-alpine AS python-run-stage
 
 ARG GITLEAKS_VERSION=8.30.0
-ARG GRYPE_VERSION=0.106.0
+ARG GRYPE_VERSION=0.112.0
 ARG KICS_VERSION=2.1.19
-ARG TRIVY_VERSION=0.69.1
+ARG TRIVY_VERSION=0.70.0
 ARG TFSEC_VERSION=1.28.14
 
 ARG CREATED
