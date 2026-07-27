@@ -1,0 +1,79 @@
+name: Build and push scanners image to Stackable Harbor
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+
+jobs:
+  docker_scanners:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      digest: ${{ steps.build-and-push-scanners.outputs.digest }}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      -
+        name: Login to Stackable Harbor
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4.4.0
+        with:
+          registry: oci.stackable.tech
+          username: robot$stackable+github-action-build
+          password: ${{ secrets.HARBOR_ROBOT_STACKABLE_GITHUB_ACTION_BUILD_SECRET }}
+      -
+        name: Set up Cosign
+        uses: sigstore/cosign-installer@9614fae9e5c5eddabb09f90a270fcb487c9f7149 # tag=v3.3.0
+      -
+        name: Set current date as env variable
+        run: echo "CREATED=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+      -
+        name: Build and push scanners
+        id: build-and-push-scanners
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          # Disable buildkit attestations so the pushed reference is the image
+          # manifest digest (not an index), which the SLSA generator requires.
+          provenance: false
+          tags: oci.stackable.tech/stackable/secobserve-scanners:latest
+          build-args: |
+            CREATED=${{ env.CREATED }}
+            REVISION=${{ github.sha }}
+            VERSION=latest
+      -
+        name: Sign the published scanners image
+        run: cosign sign -y oci.stackable.tech/stackable/secobserve-scanners@${{ steps.build-and-push-scanners.outputs.digest }}
+
+  provenance_scanners:
+    needs: [docker_scanners]
+    permissions:
+      actions: read # detect the build workflow that generated the image
+      id-token: write # mint the OIDC token for keyless signing
+      packages: write # needed until https://github.com/slsa-framework/slsa-github-generator/issues/1257 is resolved
+    # MUST be referenced by a @vX.Y.Z tag (not a SHA), otherwise the
+    # reusable workflow cannot verify its own provenance.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
+    with:
+      image: oci.stackable.tech/stackable/secobserve-scanners
+      digest: ${{ needs.docker_scanners.outputs.digest }}
+      registry-username: robot$stackable+github-action-build
+    secrets:
+      registry-password: ${{ secrets.HARBOR_ROBOT_STACKABLE_GITHUB_ACTION_BUILD_SECRET }}
